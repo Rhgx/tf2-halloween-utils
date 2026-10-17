@@ -8,7 +8,7 @@ When the sign-in is approved, Steam hands back a refresh token. The app keeps th
 
 Steam can revoke the token on its side: signing out of all devices, changing your password, or moving the Steam Guard authenticator to a new phone all do it. Steam then refuses the next sync with `AccessDenied`, so the app deletes the dead token and shows **Sign in with Steam** again.
 
-The data folder is `%APPDATA%\tf2-halloween-utils` for the installed app, and `data` inside the repo for a development build (`npm run tauri dev`). The repo's `data` folder is ignored by git, so the token never ends up in a commit.
+The data folder is `%APPDATA%\tf2-halloween-utils` for the release build, and `data` inside the repo for a development build (`npm run tauri dev`). The repo's `data` folder is ignored by git, so the token never ends up in a commit.
 
 A refresh token lets its holder log in as you. Treat the data folder like a saved password: do not share it, and sign out before handing it to anyone.
 

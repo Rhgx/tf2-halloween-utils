@@ -38,7 +38,7 @@ Inside `src-tauri/src/`, `main.rs` sets up the window, the tray and startup. `co
 | `npm run typecheck`                       | `tsc` over the app and the scripts.                                                    |
 | `npm run format` / `npm run format:check` | Prettier over the repo. `format:check` is what CI runs.                                |
 | `npm run knip`                            | Finds unused files, exports and dependencies.                                          |
-| `npm run extract`                         | Rebuilds `src/halloween-maps.json` and `public/maps/`. See below.                      |
+| `npm run extract`                         | Rebuilds `src/halloween-maps.json` and `public/maps/`. See [map-list.md](map-list.md). |
 
 In `src-tauri`, run `cargo test`, `cargo clippy --all-targets` and `cargo fmt --check`.
 
@@ -50,23 +50,15 @@ Dev builds optimise dependencies (the `[profile.dev]` sections of `src-tauri/Car
 
 `npm run tauri build` writes the exe to `src-tauri/target/release/tf2-halloween-utils.exe`. There is no installer; the exe is the release. The result is unsigned, so Windows shows a SmartScreen prompt on first run.
 
-npm holds back package install scripts until they are reviewed. The only two in the tree, from esbuild and protobufjs, are not needed and are denied in `allowScripts` in `package.json`; review any new ones with `npm install-scripts ls`.
-
 ## Releasing
 
 Bump the version in `package.json`, `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`, then push a tag like `v2.0.0`. The release workflow runs `npm run tauri build` on Windows and attaches `tf2-halloween-utils.exe` to a GitHub release for the tag. Releases are Windows only for now; CI only checks that the Linux side still compiles.
 
-## Updating the map list
-
-`npm run extract` needs a local TF2 install on Windows, since it runs the game's `vpk.exe`. It reads the map list and casual menu placement from `items_game.txt`, display names and modes from `tf_english.txt`, and the ConTracker node ids from `proto_defs.vpd`. Screenshots come from each map's TF2 Wiki infobox; for maps the wiki has no screenshot for yet, it falls back to the casual menu thumbnail from `tf2_textures_dir.vpk`, extracted with the game's own `vpk.exe`. Images are saved as lossless WebP through `sharp`, which keeps every pixel at about two thirds the size of a PNG. JPEGs from the wiki are saved as they are, since a lossless copy of a JPEG only preserves its artifacts at about five times the size.
-
-Run it when Valve adds Halloween maps, then check the diff of `halloween-maps.json` before committing. It finds TF2 with `scripts/lib/tf2-dir.ts`, so `TF2_DIR` works here too.
-
 ## Testing safely
 
-The app writes into the TF2 folder and puts the original casual queue back when it quits, so do not point a test build at your real install while the installed app is running. Make a fake game folder with a `tf/console.log` and a `tf/casual_criteria.vdf`, set `TF2_DIR` to it, and run `npm run tauri dev`. Append lines to the fake `console.log` to simulate queueing, joining a match, and map changes.
+The app writes into the TF2 folder and puts the original casual queue back when it quits, so do not point a test build at your real install while the release build is running. Make a fake game folder with a `tf/console.log` and a `tf/casual_criteria.vdf`, set `TF2_DIR` to it, and run `npm run tauri dev`. Append lines to the fake `console.log` to simulate queueing, joining a match, and map changes.
 
-The app is single instance, so close the installed app first. Otherwise the dev start only shows the open window.
+The app is single instance, so close the release build first. Otherwise the dev start only shows the open window.
 
 ## Style
 

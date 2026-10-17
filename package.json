@@ -39,9 +39,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/Rhgx/tf2-halloween-utils.git"
-  },
-  "allowScripts": {
-    "esbuild": false,
-    "protobufjs": false
   }
 }
