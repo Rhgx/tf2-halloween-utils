@@ -329,12 +329,13 @@ impl Overlay {
     /// Starts or stops the thread groups to match the switches: the overlay thread while the overlay is on, the
     /// RCON and demo threads while the radar widget is on too. May wait for threads to stop, like `set_enabled`.
     pub fn apply(&self) {
+        // the switches are read under both locks, so an overlapping call cannot act on a stale snapshot
+        let mut overlay = self.overlay.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut tracking = self.tracking.lock().unwrap_or_else(PoisonError::into_inner);
         let (overlay_on, radar_on) = {
             let s = &lock(&self.live).settings;
             (s.enabled, s.enabled && s.radar_enabled)
         };
-        let mut overlay = self.overlay.lock().unwrap_or_else(PoisonError::into_inner);
-        let mut tracking = self.tracking.lock().unwrap_or_else(PoisonError::into_inner);
         // the radar's threads stop first and start last, so they never run without the overlay thread
         if !radar_on {
             if let Some(run) = tracking.take() {

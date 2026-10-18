@@ -1,6 +1,7 @@
 //! The overlay thread: follows TF2's window, draws the widgets that are on, and handles the hotkeys and edit mode.
 
 use std::mem::zeroed;
+use std::path::PathBuf;
 use std::ptr::{null, null_mut};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -76,6 +77,8 @@ pub fn overlay_thread(live: Arc<Mutex<Live>>, stop: Arc<AtomicBool>) {
     let mut had_gargoyle = false;
     let mut steady = nav::Steady::default();
     let mut fonts_from_tf2 = false;
+    // the folder the fonts were last tried in, so a folder without TF2's fonts is not read again on every loop
+    let mut fonts_tried: Option<PathBuf> = None;
     let mut help_card: Option<(String, Pixmap)> = None;
     // the contracts' end, read once from the running TF2's files (the inner None: they hold no date)
     let mut end: Option<Option<countdown::End>> = None;
@@ -97,15 +100,17 @@ pub fn overlay_thread(live: Arc<Mutex<Live>>, stop: Arc<AtomicBool>) {
                 if l.tf_dir.is_none() {
                     l.tf_dir = tf_dir_of(tf.hwnd);
                 }
-                if !fonts_from_tf2 {
-                    if let Some(Ok(p)) = l.tf_dir.as_deref().map(|d| Painter::load(Some(d))) {
-                        fonts_from_tf2 = p.tf2_fonts;
-                        painter = p;
-                    }
-                }
             }
             l.tf_dir.clone()
         };
+        // loading parses the font files, so it runs outside the lock, once per folder
+        if window.is_some() && !fonts_from_tf2 && tf_dir != fonts_tried {
+            fonts_tried = tf_dir.clone();
+            if let Some(Ok(p)) = tf_dir.as_deref().map(|d| Painter::load(Some(d))) {
+                fonts_from_tf2 = p.tf2_fonts;
+                painter = p;
+            }
+        }
         if end.is_none() {
             if let Some(tf_dir) = tf_dir {
                 // items_game.txt is large, so this reads it outside the lock, once

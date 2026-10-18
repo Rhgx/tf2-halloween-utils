@@ -88,10 +88,13 @@ pub fn rcon_worker(live: Arc<Mutex<Live>>, stop: Arc<AtomicBool>) {
                     lock(&live).set_link(Link::Connected);
                 }
                 Err(e) => {
-                    let l = if e.kind() == std::io::ErrorKind::PermissionDenied {
-                        Link::WrongPassword
-                    } else {
-                        Link::Unreachable
+                    let l = match e.kind() {
+                        std::io::ErrorKind::PermissionDenied => Link::WrongPassword,
+                        // a timeout means TF2 is busy (loading a map), not that RCON is off
+                        std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock => {
+                            Link::Waiting
+                        }
+                        _ => Link::Unreachable,
                     };
                     lock(&live).set_link(l);
                     if nap(&stop, Duration::from_secs(2)) {
@@ -106,9 +109,17 @@ pub fn rcon_worker(live: Arc<Mutex<Live>>, stop: Arc<AtomicBool>) {
         };
         let pose = match r.exec("getpos;getpos 2") {
             Ok(reply) => rcon::parse_pose(&reply),
-            Err(_) => {
+            Err(e) => {
                 link = None;
-                lock(&live).set_link(Link::Unreachable);
+                let busy = matches!(
+                    e.kind(),
+                    std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock
+                );
+                lock(&live).set_link(if busy {
+                    Link::Waiting
+                } else {
+                    Link::Unreachable
+                });
                 continue;
             }
         };
@@ -124,8 +135,13 @@ pub fn rcon_worker(live: Arc<Mutex<Live>>, stop: Arc<AtomicBool>) {
                 l.position_hz = (replies > 0).then_some(replies);
                 (replies, counted_since) = (0, Instant::now());
             }
-            // filler only while in a server (getpos answers)
-            if pose.is_some() {
+            // filler only while in a server (getpos answers) and only into our own recording, not one the user made
+            let ours = l
+                .demo_file
+                .as_deref()
+                .and_then(|f| std::path::Path::new(f).file_stem())
+                .is_some_and(|s| s == DEMO_NAME);
+            if pose.is_some() && ours {
                 l.filler
             } else {
                 0.0

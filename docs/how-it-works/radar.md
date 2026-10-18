@@ -4,7 +4,7 @@ The [radar](../using/radar.md) needs two positions, yours and the gargoyle's, an
 
 ## Your position
 
-The launch options turn on RCON, TF2's own remote console, reachable from this PC only (`+sv_rcon_whitelist_address 127.0.0.1`) and protected by a generated password. Once per screen refresh the app sends `getpos` over RCON and reads your position and view direction from the reply. TF2 also prints each reply in its console, so the app turns on TF2's console filter for lines with `setang`; the replies over RCON are not affected.
+The launch options turn on RCON, TF2's own remote console, and protect it with a generated password. TF2 listens for RCON on all network interfaces, so other devices on your local network can reach the port; a router normally keeps it off the internet. Source also bans an address after repeated wrong passwords. `+sv_rcon_whitelist_address 127.0.0.1` only keeps this PC from ever being banned. Once per screen refresh the app sends `getpos` over RCON and reads your position and view direction from the reply. TF2 also prints each reply in its console, so the app turns on TF2's console filter for lines with `setang`; the replies over RCON are not affected.
 
 The distance and height it shows change only once the real value is three quarters of a display step away, so your position's small jitter does not make them flicker between two numbers.
 
