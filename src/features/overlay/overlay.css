@@ -1,30 +1,95 @@
-/* Gargoyle radar: one grid of two columns and two rows, read top to bottom. Row 1 is now: the overlay preview
-   (the one box on the page) beside the live status, or the setup steps on first run. Row 2 is change: Overlay look
-   under the preview, Behaviour under the status. */
+/* Overlay. Left: the master switch, the widget list (name and switch), then what every widget shares (the
+   in-game layout, the hotkeys). Right: the selected widget's preview, status and settings. Each control and each
+   piece of status has one home; the tab's status line is the summary. */
 
-.radar {
-  padding-top: 6px;
+.overlay {
+  padding-top: 14px;
   padding-bottom: 24px;
 }
 
-.radar .banner {
-  margin: 10px 0 0;
+.overlay .banner {
+  margin: 0 0 14px;
 }
 
-.radar-top {
+.overlay-grid {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 0 32px;
+  align-items: start;
+}
+
+.master {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 10px 0 14px;
-  color: var(--muted);
-  font-size: 13px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 12px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
 }
 
-.radar-grid {
+/* The widget list: the selected row carries the accent bar on its left edge, the vertical twin of the tab
+   strip's underline. */
+.list {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.node {
   display: grid;
-  grid-template-columns: 400px minmax(0, 1fr);
-  gap: 14px 28px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0 12px;
+  padding: 9px 12px 9px 10px;
+  border-left: 2px solid transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.node:hover {
+  color: var(--text);
+  background: var(--panel);
+}
+
+.node[aria-selected='true'] {
+  border-left-color: var(--accent);
+  color: var(--text);
+  background: var(--panel);
+}
+
+.node-name {
+  font-size: 15px;
+}
+
+.shared {
+  padding: 0 12px;
+}
+
+/* The selected widget: its preview with its look under it, beside its status. */
+.pane-now {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 0 24px;
+  align-items: start;
+}
+
+/* A choice of a few named options (the radar's units, the countdown's formats): one radio row each, the
+   countdown's with the format's text right now beside its name. */
+.rows .choices,
+.control .choices {
+  display: grid;
+  gap: 6px;
+}
+
+.choices label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
 }
 
 /* The preview: the in-game panel on a mid-tone like a map's wall, at the set opacity and scale. */
@@ -40,7 +105,7 @@
   flex: 1;
   display: grid;
   place-items: center;
-  min-height: 220px;
+  min-height: 180px;
   overflow: hidden;
 }
 
@@ -50,18 +115,27 @@
     transform 120ms var(--ease-move);
 }
 
-.anchor svg {
+/* The replicas keep the size their width and height attributes give (the base rule makes every svg an icon). */
+.anchor .panel {
   display: block;
-  width: 232px;
-  height: 100px;
+  width: auto;
+  height: auto;
 }
 
 .anchor .big {
   font: 30px var(--display);
 }
 
+.anchor .mid {
+  font: 26px var(--display);
+}
+
 .anchor .small {
   font: 15px var(--body);
+}
+
+.anchor .tiny {
+  font: 14px var(--body);
 }
 
 .anchor .cap {
@@ -241,9 +315,19 @@
   flex: 1;
 }
 
-@media (max-width: 1000px) {
-  .radar-grid {
-    grid-template-columns: 320px minmax(0, 1fr);
+/* On a narrow window (a portrait monitor, the 900px minimum) the preview goes above the status instead of
+   beside it. */
+@media (max-width: 1100px) {
+  .overlay-grid {
     column-gap: 20px;
+  }
+
+  .pane-now {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px 0;
+  }
+
+  .pane-now > :first-child {
+    max-width: 320px;
   }
 }

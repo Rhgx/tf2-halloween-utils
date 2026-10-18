@@ -25,6 +25,8 @@ export type GameState = {
   autoSyncError: string | null;
   syncing: boolean;
   syncedAt: string | null;
+  /** When this year's Scream Fortress contracts end (YYYY-MM-DD), read from TF2's files. */
+  contractsEnd: string | null;
 };
 
 export type Settings = {
@@ -46,28 +48,41 @@ export type SettingsPatch = Partial<
 
 type RadarLink = 'off' | 'waiting' | 'unreachable' | 'wrong-password' | 'connected';
 
-type RadarEvent = { at: number; text: string; tone: 'info' | 'good' | 'warn' | 'bad' | 'gargoyle' };
+type OverlayEvent = { at: number; text: string; tone: 'info' | 'good' | 'warn' | 'bad' | 'gargoyle' };
 
-export type RadarReading = { angleDeg: number; distM: number; heightM: number };
+/** Distance and height in hammer units, TF2's own (0.75 inch); height is relative to your feet, positive above. */
+export type RadarReading = { angleDeg: number; distHu: number; heightHu: number };
 
-export type RadarKey = { code: number; name: string };
+type OverlayKey = { code: number; name: string };
 
-export const DEFAULT_RADAR_KEYS: Record<'toggle' | 'edit', RadarKey> = {
-  toggle: { code: 0x13, name: 'Pause' },
-  edit: { code: 0x91, name: 'Scroll Lock' }
-};
+/** The default hotkeys' virtual-key codes (src-tauri/src/overlay/settings.rs): F3 and F4. */
+export const DEFAULT_OVERLAY_KEYS: Record<'toggle' | 'edit', number> = { toggle: 0x72, edit: 0x73 };
 
-export type Radar = {
+/** One overlay widget: its switch, its centre as fractions of TF2's client area, and its look. */
+export type OverlayWidget = { enabled: boolean; posX: number; posY: number; opacity: number; scale: number };
+
+/** How the countdown writes the time left (src-tauri/src/overlay/widgets/countdown.rs). */
+export type CountdownFormat = 'adaptive' | 'days' | 'detailed' | 'clock';
+
+/** The unit the radar writes distances in (src-tauri/src/overlay/widgets/radar/nav.rs). */
+export type RadarUnits = 'metres' | 'feet' | 'hammer';
+
+export type Overlay = {
   settings: {
+    /** The master switch: off hides every widget and stops the overlay. */
     enabled: boolean;
+    radar: OverlayWidget;
+    countdown: OverlayWidget;
+    countdownFormat: CountdownFormat;
+    radarUnits: RadarUnits;
     port: number;
     demoDelayS: number;
-    opacity: number;
-    scale: number;
     anyGargoyle: boolean;
+    /** The radar panel shows how long until the gargoyle despawns. */
+    despawnTimer: boolean;
     /** In-game hotkeys: a Windows virtual-key code and its readable name. */
-    toggleKey: RadarKey;
-    editKey: RadarKey;
+    toggleKey: OverlayKey;
+    editKey: OverlayKey;
   };
   /** The full launch options line to copy, password and -condebug included. */
   launchOptions: string;
@@ -81,18 +96,28 @@ export type Radar = {
     positionHz: number | null;
     /** The recording being followed; intervalS is null until the write interval is measured. */
     demo: { file: string; intervalS: number | null; fillerKbps: number } | null;
-    gargoyle: { map: string | null; x: number; y: number; z: number } | null;
+    /** leftS: seconds until it despawns; null if it spawned before the recording started. */
+    gargoyle: { map: string | null; x: number; y: number; z: number; leftS: number | null } | null;
     /** The live arrow, once a gargoyle and a pose exist. */
     reading: RadarReading | null;
     /** Overlay edit mode is on, or pending until TF2 is in front. */
     editing: boolean;
   };
   /** Newest first, at most 8. */
-  events: RadarEvent[];
+  events: OverlayEvent[];
 };
 
-export type RadarSettingsPatch = Partial<
-  Pick<Radar['settings'], 'port' | 'demoDelayS' | 'opacity' | 'scale' | 'anyGargoyle'>
+/** A widget's switch and look; its position changes in edit mode only. */
+export type OverlayWidgetPatch = Partial<Pick<OverlayWidget, 'enabled' | 'opacity' | 'scale'>>;
+
+export type OverlaySettingsPatch = Partial<
+  Pick<
+    Overlay['settings'],
+    'countdownFormat' | 'radarUnits' | 'port' | 'demoDelayS' | 'anyGargoyle' | 'despawnTimer'
+  > & {
+    radar: OverlayWidgetPatch;
+    countdown: OverlayWidgetPatch;
+  }
 >;
 
 export function getState() {
@@ -144,38 +169,40 @@ export function quit() {
   return invoke<void>('quit');
 }
 
-// Null on platforms without the radar (Linux).
-export function getRadar() {
-  return invoke<Radar | null>('get_radar');
+// Null on platforms without the overlay (Linux).
+export function getOverlay() {
+  return invoke<Overlay | null>('get_overlay');
 }
 
-export function setRadarEnabled(enabled: boolean) {
-  return invoke<Radar>('set_radar_enabled', { enabled });
+// The master switch. Both take a moment when they stop the overlay's threads.
+export function setOverlayEnabled(enabled: boolean) {
+  return invoke<Overlay>('set_overlay_enabled', { enabled });
 }
 
-export function setRadarSettings(patch: RadarSettingsPatch) {
-  return invoke<Radar>('set_radar_settings', { patch });
+export function setOverlaySettings(patch: OverlaySettingsPatch) {
+  return invoke<Overlay>('set_overlay_settings', { patch });
 }
 
-// Enters overlay edit mode; applies when TF2 is next in front.
-export function moveRadar() {
-  return invoke<Radar>('move_radar');
+// Enters edit mode for every widget; applies when TF2 is next in front.
+export function editOverlayLayout() {
+  return invoke<Overlay>('edit_overlay_layout');
 }
 
-export function resetRadarLayout() {
-  return invoke<Radar>('reset_radar_layout');
+// Puts every widget's position, the scale and the opacity back to their defaults.
+export function resetOverlayLayout() {
+  return invoke<Overlay>('reset_overlay_layout');
 }
 
 // Waits up to 10 s for the next key or mouse button pressed anywhere (captured natively, so the window needs no
 // focus). Esc cancels and resolves unchanged; a timeout, a key edit mode uses, or the other hotkey's key rejects.
-export function captureRadarKey(which: 'toggle' | 'edit') {
-  return invoke<Radar>('capture_radar_key', { which });
+export function captureOverlayKey(which: 'toggle' | 'edit') {
+  return invoke<Overlay>('capture_overlay_key', { which });
 }
 
 // Puts one hotkey back to its default; if the other hotkey sits on that key, the backend moves it to this one's
 // old key so they never collide.
-export function resetRadarKey(which: 'toggle' | 'edit') {
-  return invoke<Radar>('reset_radar_key', { which });
+export function resetOverlayKey(which: 'toggle' | 'edit') {
+  return invoke<Overlay>('reset_overlay_key', { which });
 }
 
 // Steam: QR sign-in (the dialog polls getState while it is pending), sign-out and contract sync.

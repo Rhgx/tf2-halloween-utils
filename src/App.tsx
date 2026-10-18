@@ -3,23 +3,23 @@ import { useEffect, useRef, useState } from 'react';
 
 import { MAP_BY_CODE, MAPS } from './data/maps.ts';
 import {
-  captureRadarKey,
+  captureOverlayKey,
   chooseTf2Folder,
   errorMessage,
   getGame,
-  getRadar,
+  getOverlay,
   getSettings,
   getState,
   launchTf2,
-  moveRadar,
+  editOverlayLayout,
   openDataFolder,
   quit,
-  resetRadarKey,
-  resetRadarLayout,
+  resetOverlayKey,
+  resetOverlayLayout,
   setManual as saveManual,
   setQueue,
-  setRadarEnabled,
-  setRadarSettings,
+  setOverlayEnabled,
+  setOverlaySettings,
   setSettings as saveSettings,
   startLogin,
   cancelLogin,
@@ -27,14 +27,14 @@ import {
   syncContracts,
   useDetectedTf2Folder,
   type GameState,
-  type Radar,
-  type RadarSettingsPatch,
+  type Overlay,
+  type OverlaySettingsPatch,
   type ServerState,
   type Settings,
   type SettingsPatch
 } from './api.ts';
 import { ContractsView } from './features/contracts/ContractsView.tsx';
-import { RadarView } from './features/overlay/RadarView.tsx';
+import { OverlayView, radarLine } from './features/overlay/OverlayView.tsx';
 import { SettingsView } from './features/settings/SettingsView.tsx';
 import { TabNav, type TabStatus, type Tool, type ViewId } from './components/TabNav.tsx';
 
@@ -65,20 +65,23 @@ function contractsStatus(server: ServerState | null, game: GameState | null, don
   return { text: count };
 }
 
-// The line under the Gargoyle radar tab: off, what needs you, else how far the link (and the gargoyle) is.
-function radarStatus({ settings, setupDone, status }: Radar): TabStatus {
-  if (!settings.enabled) return { text: 'Off' };
-  if (!setupDone) return { text: 'Setup needed', tone: 'warn' };
-  switch (status.link) {
-    case 'unreachable':
-      return { text: 'Unreachable', tone: 'warn' };
-    case 'wrong-password':
-      return { text: 'Wrong password', tone: 'warn' };
-    case 'connected':
-      return { text: status.reading ? `Gargoyle ${Math.round(status.reading.distM)} m` : 'Connected', tone: 'live' };
-    default:
-      return { text: 'Waiting for TF2' };
-  }
+// The line under the Overlay tab: off, else how the radar is doing, else which widgets are on.
+function overlayStatus(overlay: Overlay): TabStatus {
+  const { enabled, radar: widget, countdown } = overlay.settings;
+  if (!enabled) return { text: 'Off' };
+  if (widget.enabled) return radarLine(overlay);
+  return { text: countdown.enabled ? 'Countdown only' : 'Widgets off' };
+}
+
+// The settings as they will be once a patch is saved; each widget's part is a partial of its own.
+function patched(settings: Overlay['settings'], patch: OverlaySettingsPatch): Overlay['settings'] {
+  const { radar, countdown, ...rest } = patch;
+  return {
+    ...settings,
+    ...rest,
+    radar: { ...settings.radar, ...radar },
+    countdown: { ...settings.countdown, ...countdown }
+  };
 }
 
 export function App() {
@@ -88,8 +91,8 @@ export function App() {
   const [syncing, setSyncing] = useState(false);
   const [game, setGame] = useState<GameState | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [radar, setRadar] = useState<Radar | null>(null);
-  // The backend answers null where there is no radar (Linux); then there is nothing to poll.
+  const [overlay, setOverlay] = useState<Overlay | null>(null);
+  // The backend answers null where there is no overlay (Linux); then there is nothing to poll.
   const [noRadar, setNoRadar] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [closed, setClosed] = useState(false);
@@ -125,13 +128,13 @@ export function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // The radar feeds its tab's status line, so it polls all the time; faster while its view is open.
-  const radarOpen = view === 'radar';
+  // The overlay feeds its tab's status line, so it polls all the time; faster while its view is open.
+  const radarOpen = view === 'overlay';
   useEffect(() => {
     if (noRadar) return;
     const poll = () =>
-      getRadar().then(
-        (next) => (next ? setRadar(next) : setNoRadar(true)),
+      getOverlay().then(
+        (next) => (next ? setOverlay(next) : setNoRadar(true)),
         () => {}
       );
     poll();
@@ -295,18 +298,18 @@ export function App() {
 
   const applySettings = (task: Promise<Settings>) => task.then(setSettings, showError);
 
-  // Radar settings work the same way; a failed save puts the settings back and keeps the latest status.
-  function writeRadar(patch: Partial<Radar['settings']>, save: () => Promise<Radar>, what: string) {
-    if (!radar) return;
-    const previous = radar.settings;
-    setRadar({ ...radar, settings: { ...previous, ...patch } });
-    save().then(setRadar, (err: unknown) => {
-      setRadar((current) => current && { ...current, settings: previous });
+  // Overlay settings work the same way; a failed save puts the settings back and keeps the latest status.
+  function writeOverlay(next: Overlay['settings'], save: () => Promise<Overlay>, what: string) {
+    if (!overlay) return;
+    const previous = overlay.settings;
+    setOverlay({ ...overlay, settings: next });
+    save().then(setOverlay, (err: unknown) => {
+      setOverlay((current) => current && { ...current, settings: previous });
       setToast({ message: `Couldn't ${what}: ${errorMessage(err)}`, kind: 'error' });
     });
   }
 
-  const applyRadar = (task: Promise<Radar>) => task.then(setRadar, showError);
+  const applyOverlay = (task: Promise<Overlay>) => task.then(setOverlay, showError);
 
   const restoreOnQuit = settings?.restoreQueueOnQuit ?? true;
 
@@ -326,10 +329,10 @@ export function App() {
   const doneCount = MAPS.filter((map) => completed.has(map.code)).length;
   const doneState = (code: string) => (synced.has(code) ? 'synced' : manual.has(code) ? 'manual' : null);
 
-  // The tools in the tab strip, in order. The Gargoyle radar is there where the backend has one (Windows);
-  // Settings is not a tool and always sits at the right.
+  // The tools in the tab strip, in order. The Overlay is there where the backend has one (Windows); Settings is
+  // not a tool and always sits at the right.
   const tools: Tool[] = [{ id: 'contracts', label: 'Contracts', status: contractsStatus(server, game, doneCount) }];
-  if (radar) tools.push({ id: 'radar', label: 'Gargoyle radar', status: radarStatus(radar) });
+  if (overlay) tools.push({ id: 'overlay', label: 'Overlay', status: overlayStatus(overlay) });
 
   return (
     <>
@@ -359,19 +362,25 @@ export function App() {
         onOpenSettings={() => openView('settings')}
       />
 
-      {radar && (
-        <RadarView
-          className={viewClass('radar')}
-          radar={radar}
+      {overlay && (
+        <OverlayView
+          className={viewClass('overlay')}
+          overlay={overlay}
           game={game}
           onEnable={(enabled) =>
-            writeRadar({ enabled }, () => setRadarEnabled(enabled), `turn the radar ${enabled ? 'on' : 'off'}`)
+            writeOverlay(
+              { ...overlay.settings, enabled },
+              () => setOverlayEnabled(enabled),
+              `turn the overlay ${enabled ? 'on' : 'off'}`
+            )
           }
-          onChange={(patch: RadarSettingsPatch) =>
-            writeRadar(patch, () => setRadarSettings(patch), 'save the radar settings')
+          onChange={(patch) =>
+            writeOverlay(patched(overlay.settings, patch), () => setOverlaySettings(patch), 'save the overlay settings')
           }
-          onMove={() => applyRadar(moveRadar())}
-          onReset={() => applyRadar(resetRadarLayout())}
+          onMove={() => applyOverlay(editOverlayLayout())}
+          onReset={() => applyOverlay(resetOverlayLayout())}
+          onCaptureKey={(which) => applyOverlay(captureOverlayKey(which))}
+          onResetKey={(which) => applyOverlay(resetOverlayKey(which))}
           onOpenSettings={() => openView('settings')}
         />
       )}
@@ -389,9 +398,6 @@ export function App() {
         onSignIn={() => account(startLogin)}
         onSignOut={() => account(logout)}
         onRetry={loadSettings}
-        radar={radar}
-        onCaptureKey={(which) => applyRadar(captureRadarKey(which))}
-        onResetKey={(which) => applyRadar(resetRadarKey(which))}
       />
 
       {server?.login && (

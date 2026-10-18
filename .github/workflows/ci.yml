@@ -33,7 +33,7 @@ jobs:
       - run: cargo test
         working-directory: src-tauri
 
-  # Releases are Windows only for now; this keeps the Linux side (no radar) compiling until a Linux build is tested.
+  # Releases are Windows only for now; this keeps the Linux side (no overlay) compiling until a Linux build is tested.
   linux:
     runs-on: ubuntu-latest
     steps:

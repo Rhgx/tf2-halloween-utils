@@ -68,7 +68,7 @@
   color: var(--muted);
 }
 
-/* The tab's one indicator: green pulsing while TF2 runs, orange when something needs you. */
+/* The tab's one indicator: green while TF2 runs, orange when something needs you. */
 .tab-dot {
   width: 7px;
   height: 7px;
@@ -77,7 +77,6 @@
 
 .tab-dot.live {
   background: var(--played);
-  animation: pulse 2s ease-in-out infinite;
 }
 
 .tab-dot.warn {
@@ -111,7 +110,9 @@
   animation: rise 160ms ease-out;
 }
 
+/* `forwards` holds it at 0 once faded: the timer that hides it can fire a frame after the animation ends, and the
+   view would flash back for that frame. */
 .view.is-leaving {
   display: block;
-  animation: fade 80ms ease-out reverse;
+  animation: fade 80ms ease-out reverse forwards;
 }

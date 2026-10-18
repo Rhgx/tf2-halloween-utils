@@ -1,7 +1,7 @@
 import { Settings as SettingsIcon } from 'lucide-react';
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 
-export type ViewId = 'contracts' | 'radar' | 'settings';
+export type ViewId = 'contracts' | 'overlay' | 'settings';
 
 /** One line under the tool name. The tone adds the tab's only indicator: green pulsing = live, orange = needs you. */
 export type TabStatus = { text: string; tone?: 'live' | 'warn' };

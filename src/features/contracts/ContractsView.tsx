@@ -154,7 +154,7 @@ export function ContractsView({
             <input
               ref={searchInput}
               type="search"
-              placeholder="Search maps, modes, file names or ConTracker folders"
+              placeholder="Search maps or folders"
               aria-label="Search maps"
               value={query}
               onChange={(e) => setQuery(e.target.value)}

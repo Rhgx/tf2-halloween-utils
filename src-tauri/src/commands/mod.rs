@@ -1,4 +1,7 @@
-// What the UI calls. The shapes match the JSON the Node server sent, with camelCase field names.
+// What the UI calls. The shapes match the JSON the Node server sent, with camelCase field names. The Overlay tab's
+// commands are in overlay.rs.
+
+pub mod overlay;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -47,6 +50,7 @@ pub struct GameState {
     auto_sync_error: Option<String>,
     syncing: bool,
     synced_at: Option<String>,
+    contracts_end: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -92,6 +96,12 @@ fn server_state(state: &AppState) -> Result<ServerState, String> {
 
 fn game_state(state: &AppState) -> Result<GameState, String> {
     let contracts = store::read_contracts(&state.contracts_file).map_err(|err| err.to_string())?;
+    let contracts_end = state
+        .tf2
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .contracts_end
+        .clone();
     let game = state.game.lock().unwrap_or_else(PoisonError::into_inner);
     Ok(GameState {
         tf2_found: game.tf2_found,
@@ -104,6 +114,7 @@ fn game_state(state: &AppState) -> Result<GameState, String> {
         auto_sync_error: game.auto_sync_error.clone(),
         syncing: state.steam.is_syncing(),
         synced_at: contracts.map(|contracts| contracts.synced_at),
+        contracts_end,
     })
 }
 

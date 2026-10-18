@@ -4,8 +4,7 @@ mod commands;
 mod game;
 mod maps;
 #[cfg(windows)]
-mod radar;
-mod radar_commands;
+mod overlay;
 mod settings;
 mod steam;
 mod store;
@@ -46,6 +45,8 @@ pub struct Tf2Paths {
     pub tf_dir: Option<PathBuf>,
     pub criteria_file: Option<PathBuf>,
     pub console_log: Option<PathBuf>,
+    /// When this year's Scream Fortress contracts end ("YYYY-MM-DD"), from the game's files.
+    pub contracts_end: Option<String>,
 }
 
 impl Tf2Paths {
@@ -57,6 +58,7 @@ impl Tf2Paths {
             console_log: tf_dir
                 .as_ref()
                 .map(|dir| dir.join("tf").join("console.log")),
+            contracts_end: tf_dir.as_deref().and_then(tf2::items_game::contracts_end),
             tf_dir,
         }
     }
@@ -124,13 +126,13 @@ fn main() -> tauri::Result<()> {
             commands::cancel_login,
             commands::logout,
             commands::sync,
-            radar_commands::get_radar,
-            radar_commands::set_radar_enabled,
-            radar_commands::set_radar_settings,
-            radar_commands::move_radar,
-            radar_commands::reset_radar_layout,
-            radar_commands::capture_radar_key,
-            radar_commands::reset_radar_key
+            commands::overlay::get_overlay,
+            commands::overlay::set_overlay_enabled,
+            commands::overlay::set_overlay_settings,
+            commands::overlay::edit_overlay_layout,
+            commands::overlay::reset_overlay_layout,
+            commands::overlay::capture_overlay_key,
+            commands::overlay::reset_overlay_key
         ])
         .setup(|app| {
             let menu = MenuBuilder::new(app)
@@ -246,11 +248,10 @@ fn main() -> tauri::Result<()> {
             game::start(app.handle().clone());
             #[cfg(windows)]
             {
-                let radar = radar::runner::Radar::load(&data_dir.join("radar.json"));
-                if radar.enabled() {
-                    radar.start();
-                }
-                app.manage(radar);
+                // radar.json is the file's name from before the overlay had other widgets; kept so layouts carry over
+                let overlay = overlay::Overlay::load(&data_dir.join("radar.json"));
+                overlay.apply();
+                app.manage(overlay);
             }
             if show_window {
                 show_main(app.handle());
@@ -286,9 +287,9 @@ fn main() -> tauri::Result<()> {
         } => api.prevent_exit(),
         // Every way out of the app passes here, including the tray's Quit. A restore already done by `quit` finds no backup.
         RunEvent::Exit => {
-            // the radar's threads first, so nothing talks to TF2 while the queue is put back
+            // the overlay's threads first, so nothing talks to TF2 while the queue is put back
             #[cfg(windows)]
-            app.state::<radar::runner::Radar>().stop();
+            app.state::<overlay::Overlay>().stop();
             commands::restore_on_close(&app.state::<AppState>());
         }
         _ => {}
