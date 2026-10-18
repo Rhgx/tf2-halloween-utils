@@ -33,6 +33,8 @@ const HANDLE_INDEX_MASK: i64 = (1 << 11) - 1;
 struct Gift {
     origin: Option<[f32; 3]>,
     target: Option<u32>,
+    /// The demo tick it was created on; None if it already existed when the recording started.
+    spawned_tick: Option<u32>,
 }
 
 pub struct DemoFollower {
@@ -48,6 +50,9 @@ pub struct DemoFollower {
     gift_class: Option<u16>,
     local_entity: Option<u32>,
     gifts: HashMap<u32, Gift>,
+    /// The newest demo tick read, and the length of a tick in seconds.
+    tick: u32,
+    interval_per_tick: f32,
     pub map: Option<String>,
     /// TF2 wrote the stop packet: the recording ended (disconnect, or a new `record`/`stop`).
     pub ended: bool,
@@ -76,6 +81,8 @@ impl DemoFollower {
             gift_class: None,
             local_entity: None,
             gifts: HashMap::new(),
+            tick: 0,
+            interval_per_tick: 0.015,
             map: None,
             ended: false,
         }
@@ -91,17 +98,27 @@ impl DemoFollower {
 
     /// Your gargoyle's position, if one currently exists for you.
     pub fn my_gargoyle(&self) -> Option<[f32; 3]> {
+        self.mine().and_then(|g| g.origin)
+    }
+
+    /// How long ago your gargoyle spawned, as of the newest data read; None if it spawned before the recording.
+    pub fn my_gargoyle_age(&self) -> Option<Duration> {
+        let spawned = self.mine()?.spawned_tick?;
+        let ticks = self.tick.saturating_sub(spawned);
+        Duration::try_from_secs_f32(ticks as f32 * self.interval_per_tick).ok()
+    }
+
+    fn mine(&self) -> Option<&Gift> {
         if self.ended {
             return None;
         }
         if self.any_owner {
-            return self.gifts.values().find_map(|g| g.origin);
+            return self.gifts.values().find(|g| g.origin.is_some());
         }
         let me = self.local_entity?;
         self.gifts
             .values()
-            .find(|g| g.target == Some(me))
-            .and_then(|g| g.origin)
+            .find(|g| g.target == Some(me) && g.origin.is_some())
     }
 
     /// Reads whatever TF2 has appended since the last call. Returns false if the file shrank or vanished
@@ -187,6 +204,8 @@ impl DemoFollower {
                 }
             }
             Packet::Message(p) | Packet::Signon(p) => {
+                let tick = u32::from(p.tick);
+                self.tick = self.tick.max(tick);
                 for message in p.messages {
                     match message {
                         Message::CreateStringTable(m) => self.handle_string_table(m.table),
@@ -200,14 +219,17 @@ impl DemoFollower {
                         Message::ServerInfo(info) => {
                             // a new level: everything entity-related starts over
                             self.local_entity = Some(info.player_slot as u32 + 1);
+                            self.interval_per_tick = info.interval_per_tick;
                             self.map = Some(info.map.clone());
                             self.gifts.clear();
                             self.state.handle_message(Message::ServerInfo(info), p.tick);
                         }
                         Message::PacketEntities(m) => {
                             // read gifts before the state applies the update (Enter props need the old baselines)
+                            // a full update (no delta) lists what already exists; only a delta shows new entities
+                            let spawned_tick = m.delta.is_some().then_some(tick);
                             for entity in &m.entities {
-                                self.track_gift(entity);
+                                self.track_gift(entity, spawned_tick);
                             }
                             for removed in &m.removed_entities {
                                 self.gifts.remove(&u32::from(*removed));
@@ -236,7 +258,7 @@ impl DemoFollower {
         self.table_names.push(table.name.into_owned());
     }
 
-    fn track_gift(&mut self, entity: &PacketEntity) {
+    fn track_gift(&mut self, entity: &PacketEntity, spawned_tick: Option<u32>) {
         let index = u32::from(entity.entity_index);
         if Some(u16::from(entity.server_class)) != self.gift_class {
             return;
@@ -247,7 +269,10 @@ impl DemoFollower {
             }
             return;
         }
-        let gift = self.gifts.entry(index).or_default();
+        let gift = self.gifts.entry(index).or_insert_with(|| Gift {
+            spawned_tick: spawned_tick.filter(|_| entity.update_type == UpdateType::Enter),
+            ..Gift::default()
+        });
         for prop in entity.props(&self.state) {
             match (prop.identifier, &prop.value) {
                 (ORIGIN, SendPropValue::Vector(Vector { x, y, z })) => {
@@ -328,19 +353,21 @@ mod tests {
     }
 
     /// Writes `data` to a fresh file in steps (as TF2 would while recording) and polls a follower after each.
-    /// Also returns the most entities tracked with a known origin at any point.
+    /// Also returns the most entities tracked with a known origin at any point, and every spawn tick seen.
     fn follow_in_chunks(
         data: &[u8],
         class: &'static str,
         chunk_sizes: &mut dyn FnMut() -> usize,
-    ) -> (DemoFollower, usize) {
+    ) -> (DemoFollower, usize, Vec<u32>) {
+        static RUN: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+        let run = RUN.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let path = std::env::temp_dir().join(format!(
-            "radar_demo_test_{}_{class}.dem",
+            "radar_demo_test_{}_{run}_{class}.dem",
             std::process::id()
         ));
         std::fs::write(&path, []).unwrap();
         let mut follower = DemoFollower::tracking(&path, class);
-        let (mut written, mut most) = (0, 0);
+        let (mut written, mut most, mut spawns) = (0, 0, Vec::new());
         while written < data.len() {
             let end = (written + chunk_sizes()).min(data.len());
             let mut file = std::fs::OpenOptions::new()
@@ -358,9 +385,10 @@ mod tests {
                     .filter(|g| g.origin.is_some())
                     .count(),
             );
+            spawns.extend(follower.gifts.values().filter_map(|g| g.spawned_tick));
         }
         std::fs::remove_file(&path).unwrap();
-        (follower, most)
+        (follower, most, spawns)
     }
 
     #[test]
@@ -374,14 +402,14 @@ mod tests {
         let mut tried = Vec::new();
         // classes present in this clip; doors also move, which exercises delta updates
         for class in ["CDynamicProp", "CBaseDoor", "CLightGlow"] {
-            let (whole, _) = follow_in_chunks(data, class, &mut || usize::MAX);
+            let (whole, _, _) = follow_in_chunks(data, class, &mut || usize::MAX);
             assert!(
                 whole.map.is_some() && whole.local_entity.is_some(),
                 "server info not read"
             );
             // uneven chunk sizes from 1 KB to 40 KB, so packets get split at arbitrary points
             let mut n = 7u64;
-            let (chunked, most) = follow_in_chunks(data, class, &mut || {
+            let (chunked, most, _) = follow_in_chunks(data, class, &mut || {
                 n = n
                     .wrapping_mul(6364136223846793005)
                     .wrapping_add(1442695040888963407);
@@ -405,8 +433,22 @@ mod tests {
         );
 
         // reading the whole recording, stop packet included, ends tracking
-        let (ended, _) = follow_in_chunks(full, "CDynamicProp", &mut || 4096);
+        let (ended, _, _) = follow_in_chunks(full, "CDynamicProp", &mut || 4096);
         assert!(ended.ended && ended.gifts.is_empty());
+    }
+
+    #[test]
+    fn spawn_ticks_only_for_entities_created_while_recording() {
+        let Some(data) = sample_demo() else {
+            eprintln!("skipped: testdata/short-2024.dem not present");
+            return;
+        };
+        let data = &data[..data.len() - 16];
+        // props exist when the recording starts; the clip's one scene entity is created three ticks in
+        let (props, _, spawns) = follow_in_chunks(data, "CDynamicProp", &mut || 4096);
+        assert!(!props.gifts.is_empty() && spawns.is_empty());
+        let (_, _, spawns) = follow_in_chunks(data, "CSceneEntity", &mut || 4096);
+        assert_eq!(spawns.first(), Some(&3));
     }
 
     #[test]

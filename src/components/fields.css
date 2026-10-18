@@ -152,7 +152,8 @@ input[type='number'] {
   background: var(--bg);
 }
 
-input[type='checkbox'] {
+input[type='checkbox'],
+input[type='radio'] {
   width: 16px;
   height: 16px;
   margin: 0;
