@@ -80,6 +80,8 @@ struct Live {
     demo_file: Option<String>,
     demo_interval_s: Option<f32>,
     demo_grew: Option<Instant>,
+    /// The demo thread asks the RCON thread to start the demo over (it passed its size limit).
+    restart_demo: bool,
     /// Filler bytes per second to send, set by the demo thread.
     filler: f32,
     /// "Move radar" was pressed in the app; edit mode starts when TF2 is next in front.
@@ -299,6 +301,7 @@ impl Overlay {
             demo_file: None,
             demo_interval_s: None,
             demo_grew: None,
+            restart_demo: false,
             edit_requested: false,
             editing: false,
             events: VecDeque::new(),
@@ -345,6 +348,7 @@ impl Overlay {
                 live.gargoyle_spawned = None;
                 live.demo_file = None;
                 live.demo_interval_s = None;
+                live.restart_demo = false;
                 live.event(Tone::Info, "Radar off.");
             }
         }

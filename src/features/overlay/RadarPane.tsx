@@ -114,8 +114,9 @@ export function RadarPane({ overlay, onChange }: RadarPaneProps) {
                 <p className="note">
                   <code>-usercon</code> turns on TF2's remote console, limited to this PC by the whitelist and a
                   password made for you. <code>-condebug</code> writes the console log that match tracking reads. The
-                  radar only sends <code>getpos</code>, <code>record</code>, empty <code>alias</code> commands that make
-                  TF2 save the demo sooner, and a console filter that hides the <code>getpos</code> replies.
+                  radar only sends <code>getpos</code>, <code>record</code> and <code>stop</code> for its own demo,
+                  empty <code>alias</code> commands that make TF2 save the demo sooner, and a console filter that hides
+                  the <code>getpos</code> replies.
                 </p>
               </li>
               <li>
@@ -221,7 +222,7 @@ export function RadarPane({ overlay, onChange }: RadarPaneProps) {
       <Group title="Behaviour">
         <Field
           name="Demo delay"
-          help="Longest wait before a new gargoyle shows. Lower is faster, but the demo file grows faster: at 5 s up to about 500 MB an hour on a quiet server."
+          help="Longest wait before a new gargoyle shows. Lower is faster, but TF2 writes more to disk: at 5 s up to about 500 MB an hour on a quiet server. The file starts over at 100 MB."
         >
           <Slider
             label="Demo delay in seconds"

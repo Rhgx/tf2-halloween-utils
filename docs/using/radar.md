@@ -16,7 +16,7 @@ The setup steps fold away once the radar connects. The line contains a password 
 
 ## Settings
 
-- **Demo delay** (default 5 s) is the longest wait before a new gargoyle shows. Lower is faster, but the demo file TF2 records grows faster.
+- **Demo delay** (default 5 s) is the longest wait before a new gargoyle shows. Lower is faster, but TF2 writes more to disk (the file itself starts over at 100 MB).
 - **Units**: metres (default), feet or Hammer units (TF2's own, 0.75 inch) for the distance and the height.
 - **Despawn countdown** (on by default) shows the time left under the distance; turn it off for a two-line panel.
 - **RCON port**: change it only if the port is taken, then paste the new launch options line into Steam.
