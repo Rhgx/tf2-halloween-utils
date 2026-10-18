@@ -11,7 +11,6 @@ The app runs in the tray. Closing the window keeps it running there, and frees t
 - **Start with Windows**: starts the app in the tray when you sign in to Windows.
 - **TF2 folder**: found through Steam's libraries. **Change** picks another folder with a `tf` folder inside; **Use detected** goes back.
 - **Restore original casual map selection on quit**: on by default. Off keeps the app's queue in TF2 after it quits.
-- **Radar hotkeys**: see [the radar doc](radar.md#hotkeys).
 - **Sign out**: deletes the saved Steam sign-in.
 
 ## The data folder

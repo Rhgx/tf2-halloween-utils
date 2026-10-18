@@ -4,7 +4,7 @@ The Contracts tab lists all 65 Halloween maps, grouped the way TF2's casual menu
 
 ## Sign in once
 
-Click **Sign in with Steam** and scan the QR code with the Steam mobile app. No password is typed anywhere. The app then syncs which contracts you have completed. See [Steam sync](steam-sync.md) for what is stored.
+Click **Sign in with Steam** and scan the QR code with the Steam mobile app. No password is typed anywhere. The app then syncs which contracts you have completed. See [Steam sync](../how-it-works/steam-sync.md) for what is stored.
 
 ## Queue the maps you need
 
