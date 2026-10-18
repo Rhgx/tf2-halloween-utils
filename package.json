@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "TF2 Halloween tools: a contracts checklist that syncs from Steam and writes your casual queue, and a soul gargoyle radar overlay.",
+  "description": "Windows app for TF2's Scream Fortress: a contracts checklist synced from Steam and a soul gargoyle radar overlay.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

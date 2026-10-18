@@ -1,6 +1,6 @@
 # <img src="assets/icon.svg" alt="" width="32" height="32" align="absmiddle"> TF2 Halloween Utils
 
-A Windows app for Team Fortress 2's Halloween event:
+A Windows app for Team Fortress 2's Scream Fortress:
 
 - **Contracts**: a checklist of the Halloween map contracts. It syncs your progress from Steam, follows your matches, and queues the maps you still need.
 - **Gargoyle radar**: an in-game overlay that points to your soul gargoyle.
