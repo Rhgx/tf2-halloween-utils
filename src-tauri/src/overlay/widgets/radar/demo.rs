@@ -50,7 +50,7 @@ pub struct DemoFollower {
     gift_class: Option<u16>,
     local_entity: Option<u32>,
     gifts: HashMap<u32, Gift>,
-    /// The newest demo tick read, and the length of a tick in seconds.
+    /// The tick of the newest gameplay packet read, and the length of a tick in seconds.
     tick: u32,
     interval_per_tick: f32,
     pub map: Option<String>,
@@ -133,6 +133,10 @@ impl DemoFollower {
         if len < self.offset {
             return false;
         }
+        // TF2 never appends to a recording after its stop packet, so growth means a new one replaced it
+        if self.ended && len > self.offset {
+            return false;
+        }
         if len > self.offset {
             let mut chunk = Vec::with_capacity((len - self.offset) as usize);
             if file.seek(SeekFrom::Start(self.offset)).is_err()
@@ -183,6 +187,10 @@ impl DemoFollower {
     }
 
     fn handle_packet(&mut self, packet: Packet) {
+        // sign-on ticks run ahead of the gameplay ticks that follow them, so only gameplay packets move the clock
+        if let Packet::Message(p) = &packet {
+            self.tick = u32::from(p.tick);
+        }
         match packet {
             Packet::DataTables(p) => {
                 if self
@@ -205,7 +213,6 @@ impl DemoFollower {
             }
             Packet::Message(p) | Packet::Signon(p) => {
                 let tick = u32::from(p.tick);
-                self.tick = self.tick.max(tick);
                 for message in p.messages {
                     match message {
                         Message::CreateStringTable(m) => self.handle_string_table(m.table),
@@ -449,6 +456,44 @@ mod tests {
         assert!(!props.gifts.is_empty() && spawns.is_empty());
         let (_, _, spawns) = follow_in_chunks(data, "CSceneEntity", &mut || 4096);
         assert_eq!(spawns.first(), Some(&3));
+    }
+
+    #[test]
+    fn clock_ends_on_the_gameplay_tick_not_the_sign_on_tick() {
+        let Some(data) = sample_demo() else {
+            eprintln!("skipped: testdata/short-2024.dem not present");
+            return;
+        };
+        let data = &data[..data.len() - 16];
+        // sign-on packets reach tick ~2530 before gameplay starts near 0
+        let (scene, _, _) = follow_in_chunks(data, "CSceneEntity", &mut || 4096);
+        assert!(scene.tick > 3 && scene.tick < 1000, "tick {}", scene.tick);
+    }
+
+    #[test]
+    fn growth_after_the_stop_packet_means_a_new_recording() {
+        let Some(data) = sample_demo() else {
+            eprintln!("skipped: testdata/short-2024.dem not present");
+            return;
+        };
+        let path =
+            std::env::temp_dir().join(format!("radar_replaced_test_{}.dem", std::process::id()));
+        std::fs::write(&path, &data).unwrap();
+        let mut follower = DemoFollower::new(&path);
+        assert!(follower.poll());
+        assert!(follower.ended);
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        std::io::Write::write_all(&mut file, &[0u8; 16]).unwrap();
+        drop(file);
+        let replaced = !follower.poll();
+        std::fs::remove_file(&path).unwrap();
+        assert!(
+            replaced,
+            "a file that grew after its stop packet was not reported"
+        );
     }
 
     #[test]

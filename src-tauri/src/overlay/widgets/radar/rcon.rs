@@ -11,6 +11,8 @@ const SERVERDATA_AUTH: i32 = 3;
 const SERVERDATA_EXECCOMMAND: i32 = 2;
 const SERVERDATA_AUTH_RESPONSE: i32 = 2;
 const SERVERDATA_RESPONSE_VALUE: i32 = 0;
+/// Longest a read or write waits on TF2, which stops answering for a few seconds while it loads a map.
+const IO_TIMEOUT: Duration = Duration::from_millis(1500);
 
 pub struct Rcon {
     stream: TcpStream,
@@ -21,7 +23,8 @@ impl Rcon {
     pub fn connect(port: u16, password: &str) -> io::Result<Rcon> {
         let addr = SocketAddr::from(([127, 0, 0, 1], port));
         let stream = TcpStream::connect_timeout(&addr, Duration::from_millis(500))?;
-        stream.set_read_timeout(Some(Duration::from_millis(1500)))?;
+        stream.set_read_timeout(Some(IO_TIMEOUT))?;
+        stream.set_write_timeout(Some(IO_TIMEOUT))?;
         stream.set_nodelay(true)?;
         let mut rcon = Rcon { stream, next_id: 1 };
         let id = rcon.send(SERVERDATA_AUTH, password)?;
@@ -101,6 +104,13 @@ pub struct Pose {
 
 /// The newest complete pose in console output containing `getpos` and `getpos 2` results.
 pub fn parse_pose(text: &str) -> Option<Pose> {
+    // "inf" and "nan" parse as numbers too; a pose with one would break drawing
+    if text
+        .split(|c: char| c.is_whitespace() || c == ';')
+        .any(|v| v.parse::<f32>().is_ok_and(|n| !n.is_finite()))
+    {
+        return None;
+    }
     let numbers = |s: &str| -> Option<[f32; 3]> {
         let mut it = s.split_whitespace().map(|v| v.parse::<f32>().ok());
         Some([it.next()??, it.next()??, it.next()??])
@@ -137,6 +147,8 @@ mod tests {
         assert_eq!(pose.eye, [250.0, -600.0, -126.96875]);
         assert_eq!((pose.pitch, pose.yaw), (3.0, 90.0));
         assert_eq!(pose.feet, [250.0, -600.0, -194.96875]);
+        assert!(parse_pose("setpos 1 2 nan;setang 0 10 0").is_none());
+        assert!(parse_pose("setpos 1 2 3;setang 0 inf 0").is_none());
     }
 
     #[test]

@@ -201,7 +201,8 @@ impl OverlaySettings {
         }
     }
 
-    /// Launch options that enable TF2's RCON, reachable from this PC only, plus -condebug for match tracking.
+    /// Launch options that enable TF2's RCON on the local network, protected by the password, plus -condebug for
+    /// match tracking.
     pub fn launch_options(&self) -> String {
         format!(
             "-usercon +ip 0.0.0.0 +hostport {} +net_start +rcon_password {} +sv_rcon_whitelist_address 127.0.0.1 -condebug",
@@ -210,7 +211,7 @@ impl OverlaySettings {
     }
 }
 
-/// 24 hex characters from the OS-seeded hasher keys; only has to be unguessable on this PC.
+/// 24 hex characters from the OS-seeded hasher keys, unguessable: it is what protects RCON on the local network.
 fn random_password() -> String {
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

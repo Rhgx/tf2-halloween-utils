@@ -112,11 +112,11 @@ export function RadarPane({ overlay, onChange }: RadarPaneProps) {
                 <strong>Copy this line.</strong>
                 <CopyLine text={overlay.launchOptions} />
                 <p className="note">
-                  <code>-usercon</code> turns on TF2's remote console, limited to this PC by the whitelist and a
-                  password made for you. <code>-condebug</code> writes the console log that match tracking reads. The
-                  radar only sends <code>getpos</code>, <code>record</code> and <code>stop</code> for its own demo,
-                  empty <code>alias</code> commands that make TF2 save the demo sooner, and a console filter that hides
-                  the <code>getpos</code> replies.
+                  <code>-usercon</code> turns on TF2's remote console, protected by a password made for you, so do not
+                  share the line. <code>-condebug</code> writes the console log that match tracking reads. The radar
+                  only sends <code>getpos</code>, <code>record</code> and <code>stop</code> for its own demo, empty{' '}
+                  <code>alias</code> commands that make TF2 save the demo sooner, and a console filter that hides the{' '}
+                  <code>getpos</code> replies.
                 </p>
               </li>
               <li>
@@ -143,7 +143,7 @@ export function RadarPane({ overlay, onChange }: RadarPaneProps) {
               </p>
             ) : setupDone ? (
               <p className="state ok">
-                Applied. RCON is reachable from this PC only.
+                Applied.
                 <span className="spacer" />
                 <button type="button" className="link muted" onClick={() => setShowSetup(false)}>
                   Back to status
