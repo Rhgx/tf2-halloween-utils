@@ -2,7 +2,7 @@
 
 Widgets drawn over TF2: the **Gargoyle radar** and the **Scream Fortress countdown**. Clicks pass through them to the game. They need TF2 in **Windowed (no border)** mode. Nothing in the game files changes and TF2's memory is not read; [how the overlay works](../how-it-works/overlay.md) explains what it does instead.
 
-<img src="../images/overlay.webp" alt="The Overlay tab: the element tree and the radar's status and settings" width="720">
+<img src="../images/overlay.webp" alt="The Overlay tab: the widget list, and the radar's preview, status and settings" width="720">
 
 ## The Overlay tab
 
