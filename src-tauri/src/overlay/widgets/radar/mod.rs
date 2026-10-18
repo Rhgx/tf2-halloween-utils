@@ -25,6 +25,10 @@ pub const GARGOYLE_LIFETIME: Duration = Duration::from_secs(240);
 
 pub const DEMO_NAME: &str = "gargoyle_radar";
 
+/// With the filler at a 5 s delay the demo grows by up to about 500 MB an hour, and TF2 only starts it over on a
+/// new map. Past this size it is started over once no gargoyle is being followed.
+const DEMO_LIMIT: u64 = 100_000_000;
+
 /// TF2 holds the demo in memory and writes it out in bursts of about this many bytes (measured: 672 to 704 KB),
 /// about once a minute on a quiet local server. Console commands are recorded into the demo too, so harmless
 /// filler commands over RCON make the bursts, and with them a new gargoyle, arrive sooner.
@@ -143,6 +147,16 @@ pub fn rcon_worker(live: Arc<Mutex<Live>>, stop: Arc<AtomicBool>) {
             continue;
         }
 
+        if std::mem::take(&mut lock(&live).restart_demo) {
+            // in one command, so the new file starts at once; `record` overwrites the old one. If TF2 ignores it,
+            // the retry below records again once the demo stops growing.
+            let _ = r.exec(&format!("stop;record {DEMO_NAME}"));
+            last_record = Some(Instant::now());
+            lock(&live).event(
+                Tone::Info,
+                "Started the demo over at 100 MB, to save disk space.",
+            );
+        }
         let recording = lock(&live)
             .demo_grew
             .is_some_and(|t| t.elapsed() < RECORD_RETRY);
@@ -162,6 +176,7 @@ pub fn demo_worker(live: Arc<Mutex<Live>>, stop: Arc<AtomicBool>) {
     let mut last_scan: Option<Instant> = None;
     let mut finder = DemoFinder::default();
     let mut had_gargoyle = false;
+    let mut restarted: Option<Instant> = None;
     while !nap(&stop, Duration::from_millis(250)) {
         let (tf_dir, any_owner, delay_s) = {
             let l = lock(&live);
@@ -242,6 +257,17 @@ pub fn demo_worker(live: Arc<Mutex<Live>>, stop: Arc<AtomicBool>) {
             }
             had_gargoyle = gargoyle.is_some();
         }
+        // ask the RCON thread to start our demo over once it is big, unless a gargoyle is being followed (its
+        // despawn time would be lost). The file shrinks a moment later, so not again for a while.
+        if let Some(f) = follower.as_ref() {
+            if too_big(f.path(), f.bytes_read())
+                && gargoyle.is_none()
+                && restarted.is_none_or(|t| t.elapsed() > Duration::from_secs(30))
+            {
+                l.restart_demo = true;
+                restarted = Some(Instant::now());
+            }
+        }
         l.in_match = follower.as_ref().is_some_and(|f| !f.ended);
         l.gargoyle = gargoyle;
         if gargoyle.is_none() {
@@ -257,5 +283,27 @@ pub fn demo_worker(live: Arc<Mutex<Live>>, stop: Arc<AtomicBool>) {
         if follower.is_none() {
             l.demo_interval_s = None;
         }
+    }
+}
+
+/// Our own recording past the size limit; never a demo you are recording yourself.
+fn too_big(path: &std::path::Path, size: u64) -> bool {
+    path.file_stem().is_some_and(|s| s == DEMO_NAME) && size > DEMO_LIMIT
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn only_our_big_demo_is_started_over() {
+        let ours = Path::new(r"C:\tf\gargoyle_radar.dem");
+        assert!(too_big(ours, DEMO_LIMIT + 1));
+        assert!(!too_big(ours, DEMO_LIMIT));
+        assert!(!too_big(
+            Path::new(r"C:\tf\demos\my_match.dem"),
+            DEMO_LIMIT * 5
+        ));
     }
 }
