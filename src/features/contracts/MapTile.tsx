@@ -1,6 +1,6 @@
 import { Check, ClipboardCheck, ExternalLink, Undo2 } from 'lucide-react';
 
-import type { HalloweenMap } from '../maps.ts';
+import type { HalloweenMap } from '../../data/maps.ts';
 
 type MapTileProps = {
   map: HalloweenMap;

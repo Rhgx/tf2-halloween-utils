@@ -3,7 +3,15 @@ import { createRoot } from 'react-dom/client';
 
 import { openLink } from './api.ts';
 import { App } from './App.tsx';
-import './styles.css';
+// All CSS is imported here, in one fixed order, because later files win ties: base first, then the shell,
+// then the tabs and shared parts in the order they were split from one file.
+import './styles/base.css';
+import './styles/shell.css';
+import './features/contracts/contracts.css';
+import './styles/common.css';
+import './components/fields.css';
+import './features/settings/settings.css';
+import './features/overlay/overlay.css';
 
 // The app window can't open new browser tabs, so every link to an outside page opens in the default browser.
 document.addEventListener('click', (event) => {

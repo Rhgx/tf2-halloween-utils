@@ -1,0 +1,249 @@
+/* Gargoyle radar: one grid of two columns and two rows, read top to bottom. Row 1 is now: the overlay preview
+   (the one box on the page) beside the live status, or the setup steps on first run. Row 2 is change: Overlay look
+   under the preview, Behaviour under the status. */
+
+.radar {
+  padding-top: 6px;
+  padding-bottom: 24px;
+}
+
+.radar .banner {
+  margin: 10px 0 0;
+}
+
+.radar-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 10px 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.radar-grid {
+  display: grid;
+  grid-template-columns: 400px minmax(0, 1fr);
+  gap: 14px 28px;
+}
+
+/* The preview: the in-game panel on a mid-tone like a map's wall, at the set opacity and scale. */
+.anchor {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #3a3632;
+}
+
+.anchor-stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  overflow: hidden;
+}
+
+.anchor-stage > div {
+  transition:
+    opacity 120ms ease,
+    transform 120ms var(--ease-move);
+}
+
+.anchor svg {
+  display: block;
+  width: 232px;
+  height: 100px;
+}
+
+.anchor .big {
+  font: 30px var(--display);
+}
+
+.anchor .small {
+  font: 15px var(--body);
+}
+
+.anchor .cap {
+  padding: 0 12px 12px;
+  color: #c8c0aa;
+  font-size: 13px;
+  text-align: center;
+}
+
+.anchor .cap strong {
+  color: var(--text);
+  font-weight: normal;
+}
+
+/* Status rows: a label column and the value; colour carries the state, an icon marks what needs you. */
+.rows {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 8px 12px;
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.rows dt {
+  padding-top: 2px;
+  color: var(--muted);
+  font: 12px var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.rows dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 6px;
+  margin: 0;
+}
+
+.rows .idle {
+  color: var(--muted);
+}
+
+.rows .bad {
+  color: var(--red);
+}
+
+.rows .ok {
+  color: var(--played);
+  font-weight: normal;
+}
+
+.rows small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.events {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.events li {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  padding: 3px 0;
+  color: var(--muted);
+}
+
+.events li:first-child {
+  color: var(--text);
+  animation: rise 160ms ease-out;
+}
+
+.events li.good,
+.events li.gargoyle {
+  color: var(--played);
+}
+
+.events li.warn {
+  color: var(--accent);
+}
+
+.events li.bad {
+  color: var(--red);
+}
+
+.events time {
+  color: var(--line-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.events-empty {
+  padding: 14px 0 0;
+}
+
+/* First run: the setup steps take the status slot. */
+.setup h3 {
+  margin-top: 4px;
+  font: 18px var(--display);
+}
+
+.steps {
+  margin: 6px 0 0;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.steps li {
+  padding: 4px 0;
+}
+
+.steps li::marker {
+  color: var(--accent);
+  font: 14px var(--display);
+}
+
+.steps strong {
+  color: var(--text);
+  font-weight: normal;
+}
+
+.steps .note {
+  margin-top: 6px;
+}
+
+.copy {
+  display: flex;
+  align-items: stretch;
+  margin-top: 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.copy code {
+  flex: 1;
+  padding: 8px 12px;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.copy button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 0;
+  border-left: 1px solid var(--line-strong);
+  background: var(--panel-hover);
+  font: 13px var(--display);
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.copy button:hover {
+  background: var(--accent);
+  color: #fff8ec;
+}
+
+.setup .state {
+  display: flex;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.setup .state .spacer {
+  flex: 1;
+}
+
+@media (max-width: 1000px) {
+  .radar-grid {
+    grid-template-columns: 320px minmax(0, 1fr);
+    column-gap: 20px;
+  }
+}

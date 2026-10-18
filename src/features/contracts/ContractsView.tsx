@@ -1,8 +1,8 @@
 import { LogIn, Play, RefreshCw, Search, TriangleAlert } from 'lucide-react';
 import { useDeferredValue, useEffect, useRef, useState } from 'react';
 
-import { MAP_BY_CODE, MAPS, type HalloweenMap } from '../maps.ts';
-import type { GameState, ServerState } from './api.ts';
+import { MAP_BY_CODE, MAPS, type HalloweenMap } from '../../data/maps.ts';
+import type { GameState, ServerState } from '../../api.ts';
 import { MapTile } from './MapTile.tsx';
 import { NowPlaying } from './NowPlaying.tsx';
 

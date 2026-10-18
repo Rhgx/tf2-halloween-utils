@@ -14,7 +14,7 @@ A refresh token lets its holder log in as you. Treat the data folder like a save
 
 ## Sync
 
-A sync logs in to Steam with the saved token, tells Steam it is playing TF2, says hello to the TF2 Game Coordinator, and asks the GC for the account's shared object cache. The cache includes one `CSOQuestMapNode` per ConTracker node. A node whose primary star is earned is a completed contract. The app maps those nodes to maps using the node ids in `src/halloween-maps.json`, saves the result to `contracts.json` in its data folder, and logs off. The whole thing takes a few seconds.
+A sync logs in to Steam with the saved token, tells Steam it is playing TF2, says hello to the TF2 Game Coordinator, and asks the GC for the account's shared object cache. The cache includes one `CSOQuestMapNode` per ConTracker node. A node whose primary star is earned is a completed contract. The app maps those nodes to maps using the node ids in `src/data/halloween-maps.json`, saves the result to `contracts.json` in its data folder, and logs off. The whole thing takes a few seconds.
 
 The app only reads from the GC. It never sends anything that changes your account, inventory, or contracts.
 

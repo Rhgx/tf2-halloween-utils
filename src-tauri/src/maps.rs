@@ -17,7 +17,7 @@ pub struct HalloweenMap {
 }
 
 pub static MAPS: LazyLock<Vec<HalloweenMap>> = LazyLock::new(|| {
-    serde_json::from_str(include_str!("../../src/halloween-maps.json"))
+    serde_json::from_str(include_str!("../../src/data/halloween-maps.json"))
         .expect("halloween-maps.json is embedded at build time and must match HalloweenMap")
 });
 
