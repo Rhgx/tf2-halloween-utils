@@ -17,7 +17,7 @@ TF2 writes its console output to `tf/console.log` when it is launched with `-con
 - `Map: <name>` names the map being loaded. It repeats on every map change in the same match.
 - `Lobby destroyed` means the match ended.
 
-Together with a check of whether TF2 is running (`tf_win64.exe` in the process list), this is enough to show whether you are in queue, loading, or on a map, and to ask about the contract when a Halloween map ends. Contract tracking never attaches to the game or reads its memory. The gargoyle radar is the only part that sends commands to TF2, over RCON (see [the radar doc](radar.md)).
+Together with a check of whether TF2 is running (`tf_win64.exe` in the process list), this is enough to show whether you are in queue, loading, or on a map, and to ask about the contract when a Halloween map ends. Contract tracking never attaches to the game or reads its memory. The gargoyle radar is the only part that sends commands to TF2, over RCON (see [how the radar works](radar.md)).
 
 If the log file is not there, Settings shows `console.log not found` and the rest keeps working.
 
