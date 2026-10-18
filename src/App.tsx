@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { MAP_BY_CODE, MAPS } from '../maps.ts';
+import { MAP_BY_CODE, MAPS } from './data/maps.ts';
 import {
   captureRadarKey,
   chooseTf2Folder,
@@ -33,10 +33,10 @@ import {
   type Settings,
   type SettingsPatch
 } from './api.ts';
-import { ContractsView } from './ContractsView.tsx';
-import { RadarView } from './RadarView.tsx';
-import { SettingsView } from './SettingsView.tsx';
-import { TabNav, type TabStatus, type Tool, type ViewId } from './TabNav.tsx';
+import { ContractsView } from './features/contracts/ContractsView.tsx';
+import { RadarView } from './features/overlay/RadarView.tsx';
+import { SettingsView } from './features/settings/SettingsView.tsx';
+import { TabNav, type TabStatus, type Tool, type ViewId } from './components/TabNav.tsx';
 
 type Toast = { message: string; kind: 'ok' | 'error' };
 

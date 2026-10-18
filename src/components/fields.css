@@ -1,0 +1,174 @@
+/* Groups, fields, switches, read-only states and inputs: the building blocks of the Settings and Overlay tabs. */
+
+.group {
+  margin-top: 18px;
+}
+
+.group-head {
+  padding-bottom: 7px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.group-head h3 {
+  font: 15px var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 24px;
+  padding: 9px 0;
+}
+
+.field .name {
+  font-size: 14px;
+}
+
+.field .help {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.field .control {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: end;
+  font-size: 14px;
+}
+
+/* A read-only status: colour carries the state, an icon marks what needs you. */
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.state.ok {
+  color: var(--played);
+}
+
+.state.warn {
+  color: var(--accent);
+}
+
+.state.bad {
+  color: var(--red);
+}
+
+.toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--bg);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition:
+    transform 140ms var(--ease-move),
+    background-color 140ms ease;
+}
+
+.toggle[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.toggle[aria-checked='true']::after {
+  transform: translateX(16px);
+  background: #fff8ec;
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.toggle.big {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+}
+
+.toggle.big::after {
+  width: 18px;
+  height: 18px;
+}
+
+.toggle.big[aria-checked='true']::after {
+  transform: translateX(20px);
+}
+
+.note {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.field .help.warn,
+.field .help .warn {
+  color: var(--accent);
+}
+
+.field .control .val {
+  min-width: 48px;
+  text-align: right;
+  font: 15px var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+input[type='range'] {
+  width: 170px;
+  accent-color: var(--accent);
+}
+
+input[type='number'] {
+  width: 84px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    12px/1.4 ui-monospace,
+    Consolas,
+    monospace;
+}

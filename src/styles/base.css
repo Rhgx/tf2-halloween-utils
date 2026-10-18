@@ -1,0 +1,110 @@
+/* Palette borrowed from TF2's menus: tan text on dark brown panels, strange-quality orange for
+   interaction and queued maps, haunted-quality green for completed contracts. Kept flat: solid fills, 1px borders. */
+
+@font-face {
+  font-family: 'TF2Build';
+  src: url('/fonts/TF2Build.ttf') format('truetype');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TF2Secondary';
+  src: url('/fonts/TF2Secondary.ttf') format('truetype');
+  font-display: swap;
+}
+
+:root {
+  --bg: #1d1a18;
+  --panel: #2b2826;
+  --panel-hover: #36322f;
+  --line: #45403b;
+  --line-strong: #756b5e;
+  --text: #ece3cb;
+  --muted: #a89f8c;
+  --accent: #cf6a32;
+  --played: #38f3ab;
+  --red: #bd3b3b;
+  --display: 'TF2Build', 'Arial Black', sans-serif;
+  --body: 'TF2Secondary', 'Trebuchet MS', sans-serif;
+  --ease-move: cubic-bezier(0.2, 0, 0, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* The scrollbar's space is always reserved, so short lists (an empty Queued filter) don't shift the layout. */
+html {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.4 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+code {
+  font:
+    13px/1.4 ui-monospace,
+    Consolas,
+    monospace;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.kicker {
+  color: var(--accent);
+  font: 12px var(--display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

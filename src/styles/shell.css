@@ -1,0 +1,117 @@
+/* Shell: the tab strip (the window title already names the app). 52px tall, the only chrome the shell adds. */
+
+.shell-head {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.shell-row {
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+  height: 52px;
+}
+
+.tabs {
+  position: relative;
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  /* tabs carry 14px of side padding: pull the strip out so the first and last tab's text line up with the
+     content edges below */
+  margin: 0 -14px;
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 14px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.tab:hover {
+  color: var(--text);
+  background: var(--panel);
+}
+
+.tab[aria-selected='true'] {
+  color: var(--text);
+}
+
+.tab-name {
+  font: 15px var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tab-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 16px;
+  font-size: 12px;
+}
+
+.tab[aria-selected='true'] .tab-status {
+  color: var(--muted);
+}
+
+/* The tab's one indicator: green pulsing while TF2 runs, orange when something needs you. */
+.tab-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.tab-dot.live {
+  background: var(--played);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.tab-dot.warn {
+  background: var(--accent);
+}
+
+.tab.is-settings {
+  margin-left: auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-ink {
+  position: absolute;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  transition:
+    left 180ms var(--ease-move),
+    width 180ms var(--ease-move);
+}
+
+/* Views: the leaving one fades out, then the arriving one rises. Both stay mounted so their state keeps. */
+.view {
+  display: none;
+}
+
+.view.is-active {
+  display: block;
+  animation: rise 160ms ease-out;
+}
+
+.view.is-leaving {
+  display: block;
+  animation: fade 80ms ease-out reverse;
+}

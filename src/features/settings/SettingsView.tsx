@@ -8,8 +8,8 @@ import {
   type ServerState,
   type Settings,
   type SettingsPatch
-} from './api.ts';
-import { Field, Group, Switch } from './fields.tsx';
+} from '../../api.ts';
+import { Field, Group, Switch } from '../../components/fields.tsx';
 
 type KeySlot = keyof typeof DEFAULT_RADAR_KEYS;
 

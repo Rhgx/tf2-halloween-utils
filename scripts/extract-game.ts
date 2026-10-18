@@ -1,4 +1,4 @@
-// Builds src/halloween-maps.json and public/maps/* from a local TF2 install plus the TF2 Wiki:
+// Builds src/data/halloween-maps.json and public/maps/* from a local TF2 install plus the TF2 Wiki:
 // map list and casual menu placement from items_game.txt, names and modes from tf_english.txt,
 // ConTracker contract nodes from proto_defs.vpd, screenshots from each map's wiki infobox. Maps
 // the wiki has no screenshot for yet fall back to the game's own casual menu thumbnail from
@@ -13,7 +13,7 @@ import sharp, { type Sharp } from 'sharp';
 import { parseKV, type KV, type KVValue } from './lib/kv.ts';
 import { decode, messages, num, strings, type Fields } from './lib/protobuf.ts';
 import { findTf2Dir } from './lib/tf2-dir.ts';
-import type { HalloweenMap } from '../src/maps.ts';
+import type { HalloweenMap } from '../src/data/maps.ts';
 import { decodeVTF } from './lib/vtf.mjs';
 
 const TF2_DIR = process.env.TF2_DIR ?? findTf2Dir() ?? '';
@@ -23,7 +23,7 @@ const TEXTURES_VPK = path.join(TF2_DIR, 'tf', 'tf2_textures_dir.vpk');
 const PROTO_DEFS = path.join(TF2_DIR, 'tf', 'scripts', 'protodefs', 'proto_defs.vpd');
 
 const ROOT = path.resolve(import.meta.dirname, '..');
-const OUT_JSON = path.join(ROOT, 'src', 'halloween-maps.json');
+const OUT_JSON = path.join(ROOT, 'src', 'data', 'halloween-maps.json');
 const OUT_IMAGES = path.join(ROOT, 'public', 'maps');
 
 const WIKI = 'https://wiki.teamfortress.com';

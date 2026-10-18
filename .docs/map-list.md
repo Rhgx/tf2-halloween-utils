@@ -1,6 +1,6 @@
 # Updating the map list
 
-Run `npm run extract` when Valve adds Halloween maps. It rewrites `src/halloween-maps.json` and `public/maps/`; check the diff of `halloween-maps.json` before committing.
+Run `npm run extract` when Valve adds Halloween maps. It rewrites `src/data/halloween-maps.json` and `public/maps/`; check the diff of `halloween-maps.json` before committing.
 
 It needs TF2 installed on Windows, since it runs the game's `vpk.exe`, and finds it the same way the app does (`TF2_DIR` works here too).
 

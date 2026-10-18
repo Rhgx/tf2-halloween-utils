@@ -1,6 +1,6 @@
 import { ClipboardCheck, LocateFixed } from 'lucide-react';
 
-import type { HalloweenMap } from '../maps.ts';
+import type { HalloweenMap } from '../../data/maps.ts';
 
 type NowPlayingProps = {
   map: HalloweenMap;

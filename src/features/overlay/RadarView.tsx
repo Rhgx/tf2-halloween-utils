@@ -1,8 +1,8 @@
 import { Check, Copy, TriangleAlert } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 
-import type { GameState, Radar, RadarReading, RadarSettingsPatch } from './api.ts';
-import { Field, Group, Switch } from './fields.tsx';
+import type { GameState, Radar, RadarReading, RadarSettingsPatch } from '../../api.ts';
+import { Field, Group, Switch } from '../../components/fields.tsx';
 
 type RadarViewProps = {
   className: string;
